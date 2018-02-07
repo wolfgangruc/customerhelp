@@ -23,7 +23,8 @@
 |getinfodata|0|public|0|
 |init|0|public|0|
 
-[selfportfliooptimizer代码](../code/example_portfolio1.tsf)
+[selfportfliooptimizer代码](../code/example_portfolio1.tsf)<br>
+![需求转换](../img/zhgzyh001.jpg)
 
 组合跟踪范例\-
 ```
