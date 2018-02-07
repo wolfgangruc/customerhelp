@@ -1,0 +1,103 @@
+type selfportfliooptimizer = class(TSPortfolioOptimizer)
+{**
+   @explan(说明) 组合优化类扩展 ,修改init函数可以扩展约束;
+   该类的默认条件1. 给定的基准为指数代码(可以不用重载getydata函数) 2. 基准指数成分在给定的数据_infodata中可以找到
+   3.给定的_infdata保护说明中的字段
+                
+**}
+{**
+   @example(组合跟踪范例-)
+   //[selfportfliooptimizer](../code/example_portfolio1.tsf)
+   obj := new   selfportfliooptimizer();
+   obj.FIndexID := "SH000300" ;//设置基准指数
+   Obj.FBegT:=20160107T; //跟踪开始时间  
+   Obj.FEndT:=20170107T; //跟踪截止时间
+   Obj.FObjType:=1;   //设置收益最大
+   Obj.FConType:=0;  // 设置非线性约束 跟踪误差
+   obj.FThresholdUpper:=15;  //设置非线性约束上界
+   obj.init(); //构造约束
+   Ret:=obj.PortfolioOptimize();
+   return  array(
+                 "优化信息":Ret,
+                 "优化后比例":obj.GetPortfolioData(),
+                 "优化评价":obj.GetReturnandRisk()
+                 );
+**}
+   _infdata;
+    {**
+      @param(_infdata)(array) 信息, 约束条件等都从其中获得数据
+                           二维数组包括字段
+                           "代码" : 证券代码
+                           "名称" : 证券名称
+                           "比例(%)" : 实际比例
+                           "比例下界(%)" : 限制比例下界
+                           "比例上界(%)" : 限制比例上界
+                           "行业名称",  :行业名称
+                           下面字段是约束时使用
+                           "流通市值"
+                           "总市值"	,
+                           "总资产",
+                           "总股本",
+                           "EP",
+                           "BP",
+                           "综合因子"
+                           
+                           %%
+      @param(_basebk)(string) 基础板块,便于在_infodata中提取行业信息
+   **}
+   function getinfodata();
+   begin
+    {**
+      @explan(说明) 修改此函数对 _infdata 赋值;
+    **}
+   end
+   function init();
+   begin
+   {**
+      @explan(说明) 此函数处理线性约束
+	  1. 个股上下界
+	  2. 基准行业占比
+	  3. 市值基准占比
+	  4. bp基准占比
+   **}
+      getinfodata();
+      if not ifarray(_infdata) then raise "初始化数据没有";
+      //*********约束 1 个股上下界***********
+      FPortfolioData := select ["代码"],["名称"],["比例(%)"], 0 as "比例下界(%)", 5 as "比例上界(%)",["行业名称"] from _infdata end;
+     //******约束2,3,4 基准行业********************************************
+	  BK :=   getbkBYDATE(FIndexID,Fbegt); //获得指数成分
+      if not istable(bk) then raise "基准错误"; 
+      REINDEX(BK,BK); //哈希化指数成分
+       //提取指数的成分股信息
+      basezqinfo := select * from _infdata where BK[["代码"]] end ; //提取指数成分信息 
+	  //*********约束2 根据基准行业行业分类****************
+      constrhy :=  select ["行业"] as "代码",
+                  t := vselect sumof(["比例(%)"])
+                  from thisgroup end ,
+                  t*0.95           //设置下浮0.05
+                  as   "比例上界(%)",
+                  t*1.05           //设置上浮0.05
+                  as  "比例下界(%)"
+                  from  basezqinfo group by  ["行业名称"]   end ;
+	
+      constrbp := array();
+      n := length(basezqinfo);  //行业个数
+      //****************约束3获得基准总*************
+      jzbp := vselect sumof(["BP"]) from basezqinfo  end ;
+      constrbp[0,"代码"] := _infdata[:,"代码"];
+      constrbp[0,"比例上界(%)"] := 0.5*jzbp;
+      constrbp[0,"比例下界(%)"] := -0.5*jzbp;
+      constrbp[0,"权重值"] := _infdata[:,"BP"];
+
+      //******约束4 获得基准 总市值*************
+      jzzsz := vselect sumof(["BP"]) from basezqinfo  end ;
+      constrbp[1,"代码"] := _infdata[:,"代码"];
+      constrbp[1,"比例上界(%)"] := 0.5*jzzsz;
+      constrbp[1,"比例下界(%)"] := -0.5*jzzsz;
+      constrbp[1,"权重值"] := _infdata[:,"总市值"];
+      //设置到约束
+      FConStr:=ConStr union constrbp;   //合并两个线性约束
+   end
+
+end
+
