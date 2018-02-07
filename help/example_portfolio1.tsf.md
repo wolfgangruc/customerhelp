@@ -23,10 +23,10 @@
 |getinfodata|0|public|0|
 |init|0|public|0|
 
+[selfportfliooptimizer代码](../code/example_portfolio1.tsf)
 
 组合跟踪范例\-
 ```
-//[selfportfliooptimizer](../code/example_portfolio1.tsf)
 obj := new   selfportfliooptimizer();
 obj.FIndexID := "SH000300" ;//设置基准指数
 Obj.FBegT:=20160107T; //跟踪开始时间  
