@@ -5,13 +5,14 @@ type selfportfliooptimizer = class(TSPortfolioOptimizer)
    3.给定的_infdata保护说明中的字段
                 
 **}
-{**
+(**
 	@markdown
 	**代码**<br>
 	[selfportfliooptimizer代码](../code/example_portfolio1.tsf)<br>
 	**需求分析** <br>
 	![需求转换](../img/zhgzyh001.jpg)
-**}
+	$$ x = {-b \pm \sqrt{b^2-4ac} \over 2a}. $$
+**)
 {**
    @example(组合跟踪范例-)
    obj := new   selfportfliooptimizer();
